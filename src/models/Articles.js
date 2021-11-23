@@ -9,14 +9,14 @@ module.exports = (sequelize) => {
       allowNull: false,
     },
     img: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING, // INTEGER ?
       allowNull: false,
     },
     description: {
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    catergory: {
+    category: {
       type: DataTypes.ENUM('Projects', 'News'),
       allowNull: false,
     },
