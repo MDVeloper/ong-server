@@ -63,8 +63,31 @@ router.get('/', async (req, res, next) => {
 })
 
 // Modificacion de articulos
-router.put('/', (req, res) => {
+router.put('/:id', async (req, res, next) => {
+    try {
 
+        const {id} = req.params;
+        const {title, img, description, category} = req.body;
+
+        let article = await Articles.findByPk(id);
+
+        let titleUpdated = title ? title : article.title;
+        let imgUpdated = img ? img : article.img;
+        let descriptionUpdated = description ? description : article.description;
+        let categoryUpdated = category ? category : article.category;
+
+        let updated = await article.update({
+            title: titleUpdated,
+            img: imgUpdated,
+            description: descriptionUpdated,
+            category: categoryUpdated
+        });
+
+        res.status(200).json(updated)
+
+    } catch (error) {
+        next(error)
+    }
 
 
     //res.send("soy articles");
