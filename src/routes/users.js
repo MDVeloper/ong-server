@@ -1,5 +1,6 @@
 const { Router } = require('express');
 const { Users, Transactions} = require('../db.js');
+var session = require('express-session')
 // Importar todos los routers;
 // Ejemplo: const authRouter = require('./auth.js');
 
@@ -73,4 +74,41 @@ router.get('/all', async (req, res) => {
     return res.status(200).json(allUsers);
 })
 
+// Ruta para login
+
+router.get('/login', async (req, res, next) => {
+    const {email, password} = req.body;
+
+    if(email && password){
+        try {
+            let logUser = await Users.findOne({
+                where: {
+                    email: email,
+                    password: password
+                }
+            });
+    
+            if(logUser){
+                let validUser = true;
+                return res.json(validUser)
+            }
+            else {
+                let invalidUser = false;
+                return res.json(invalidUser)
+            }
+        } catch (error) {
+            next(error)
+        }
+    }
+    else {
+        return res.send("User not found")
+    }
+});
+
+// Ruta logout
+router.get("/logout", async (req, res, next) => {
+    req.session.destroy()
+});
+
 module.exports = router;
+
