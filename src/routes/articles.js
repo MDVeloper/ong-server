@@ -62,12 +62,27 @@ router.get('/', async (req, res, next) => {
 
 })
 
+// Ruta para traer por ir
+router.get("/:id", (req, res, next) => {
+    const articleid = req.params.id
+
+    if (articleid) {
+        try {
+            let article = Articles.findByPk(articleid);
+
+            return res.status(200).json(article);
+        } catch (error) {
+            next(error)
+        }
+    }
+})
+
 // Modificacion de articulos
 router.put('/:id', async (req, res, next) => {
     try {
 
-        const {id} = req.params;
-        const {title, img, description, category} = req.body;
+        const { id } = req.params;
+        const { title, img, description, category } = req.body;
 
         let article = await Articles.findByPk(id);
 
