@@ -34,8 +34,11 @@ const { Articles, Transactions, Users } = sequelize.models;
 
 // Aca vendrian las relaciones
 // Product.hasMany(Reviews);
-Users.belongsToMany(Transactions, { through: 'users_Transactions' });
-Transactions.belongsTo(Users);
+// Users.hasMany(Transactions, { as: "transactions" });
+// Transactions.belongsTo(Users, {
+  // foreignKey: "id",
+  // as: "user",
+// });
 // Articles.belongsTo(Users);
 
 module.exports = {
