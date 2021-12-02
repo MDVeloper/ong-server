@@ -7,8 +7,14 @@ const donationsRoute = require('./donations.js')
 
 const router = Router();
 
+// Middleware para mostrar la sesión actual en cada request
+router.use((req, res, next) => {
+    console.log(req.session);
+    //console.log(req.user);
+    next();
+});
+
 // Configurar los routers
-// Ejemplo: router.use('/auth', authRouter);
 router.use("/users", usersRoute);
 router.use("/articles", articlesRoute);
 router.use("/donations", donationsRoute);

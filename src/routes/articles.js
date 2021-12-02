@@ -29,9 +29,18 @@ router.post('/creacion', async (req, res, next) => {
 // Solicitud de articulos
 router.get('/', async (req, res, next) => {
 
+    const { id } = req.query;
     const { category } = req.query;
 
-    if (category) {
+    if (id) {
+        try {
+            let article = await Articles.findByPk(id);
+            return article ? res.status(200).json(article) : res.status(200).send("No se encontro este articulo.");
+        } catch (error) {
+            next(error);
+        }
+    }
+    else if (category) {
         if (category === "News" || category === "Projects") {
             try {
                 let article = await Articles.findAll({
