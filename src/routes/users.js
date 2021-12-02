@@ -1,10 +1,39 @@
 const { Router } = require('express');
 const { Users, Transactions} = require('../db.js');
+const jwt = require('jsonwebtoken');
 var session = require('express-session')
 // Importar todos los routers;
 // Ejemplo: const authRouter = require('./auth.js');
 
 const router = Router();
+
+// Funcion verificadora de token.
+function verifyTokenWasCreated(req, res, next) {
+	const headersAuthorization = req.headers["authorization"]; // Necesitamos enviar el dato en los headers
+
+    console.log("headersAuthorization");
+	console.log(headersAuthorization);
+
+	if (typeof headersAuthorization !== 'undefined') {
+		const authSplit = headersAuthorization.split(" ");
+		const authToken = authSplit[1]; // [authorization, token] 0 1
+		req.token = authToken; // seteamos el request con el token en una propiedad "token"
+		next()
+	} else {
+		res.status(403).send("authorization header undefined");
+	}
+}
+
+/*  Verificamos si el token coincide con el anterior o no.
+    Esto nos sirve para usar en todos los endpoints que queramos que si o si requieran que este logeado, que tenga el mismo token. */
+function verifyMatch(req, res, next) {
+    console.log("verifyMatch");
+    jwt.verify(req.token, 'TODO_ENV', (error, data) => {
+        if (error) return res.status(403).send("tokens doesn't match");;    
+        console.log("next()");
+        next();
+    })
+}
 
 // Main path
 router.get('/', (req, res) => {
@@ -12,7 +41,7 @@ router.get('/', (req, res) => {
 })
 
 // Registro de usuarios
-router.post("/registro", async (req, res, next) => {
+router.post("/register", async (req, res, next) => {
     try {
         const { name, lastName, password, email, country, state, birthday, privilege, volunteer, course } = req.body;
 
@@ -38,7 +67,7 @@ router.post("/registro", async (req, res, next) => {
 })
 
 // Get /detail
-router.get("/detail", async (req, res, next) => {
+router.get("/detail", verifyTokenWasCreated, verifyMatch, async (req, res, next) => {
     const { id } = req.query;
     let integerId = parseInt(id);
 
@@ -75,8 +104,7 @@ router.get('/all', async (req, res) => {
 })
 
 // Ruta para login
-
-router.get('/login', async (req, res, next) => {
+router.post('/login', async (req, res, next) => {
     const {email, password} = req.body;
 
     if(email && password){
@@ -89,12 +117,18 @@ router.get('/login', async (req, res, next) => {
             });
     
             if(logUser){
-                let validUser = true;
-                return res.json(validUser)
+                //let validUser = true;
+                //return res.json(validUser)
+                const token = jwt.sign({logUser}, 'TODO_ENV');
+                console.log(token);
+                return res.json({token}); // { "token": "eyJhbGciOiJ...........etc etc" }
             }
             else {
-                let invalidUser = false;
-                return res.json(invalidUser)
+                //let invalidUser = false;
+                //return res.json(invalidUser)
+                const token = undefined;
+                console.log(token);
+                return res.json({token}) // undefined {}
             }
         } catch (error) {
             next(error)
