@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { Users, Transactions} = require('../db.js');
+const { Users, Transactions } = require('../db.js');
 var session = require('express-session')
 // Importar todos los routers;
 // Ejemplo: const authRouter = require('./auth.js');
@@ -28,7 +28,7 @@ router.post("/registro", async (req, res, next) => {
             volunteer: volunteer,
             course: course,
         });
-        
+
         res.status(200).json(usersInstance);
     }
     catch (error) {
@@ -42,22 +42,29 @@ router.get("/detail", async (req, res, next) => {
     const { id } = req.query;
     let integerId = parseInt(id);
 
-    if (typeof integerId === "number" && !isNaN(integerId)){
-        try{
+    if (typeof integerId === "number" && !isNaN(integerId)) {
+        try {
             let user = await Users.findOne({
                 where: {
                     id: integerId,
-                },
-                include: Transactions
+                }
             });
-        
+
+            let thisUserDonations = await Transactions.findAll({
+                where: {
+                    email: user.dataValues.email
+                },
+            }
+            );
+
+            user.dataValues.donations = thisUserDonations
             res.status(200).json(user);
         }
-        catch(error){
+        catch (error) {
             next(error);
         }
     }
-    else{
+    else {
         res.status(400).send("Id invalido");
     }
 
@@ -65,21 +72,30 @@ router.get("/detail", async (req, res, next) => {
 
 // Get /all (debugging)
 router.get('/all', async (req, res) => {
-
+    const { email } = req.body;
     let allUsers = await Users.findAll({
         attributes: ["id", "name", "lastName", "password", "email", "country", "state", "birthday", "privilege", "volunteer", "course", "createdAt"],
     });
-    
-    //Promise.all(allUsers).then(resp => res.status(200).json(allUsers));
+
+    for (let i = 0; i < allUsers.length; i++) {
+        let thisDonations = await await Transactions.findAll({
+            where: {
+                email: allUsers[i].dataValues.email
+            },
+        }
+        );
+        allUsers[i].dataValues.donations = thisDonations
+    }
+
     return res.status(200).json(allUsers);
 })
 
 // Ruta para login
 
 router.get('/login', async (req, res, next) => {
-    const {email, password} = req.body;
+    const { email, password } = req.body;
 
-    if(email && password){
+    if (email && password) {
         try {
             let logUser = await Users.findOne({
                 where: {
@@ -87,8 +103,8 @@ router.get('/login', async (req, res, next) => {
                     password: password
                 }
             });
-    
-            if(logUser){
+
+            if (logUser) {
                 let validUser = true;
                 return res.json(validUser)
             }
