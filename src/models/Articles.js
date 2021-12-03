@@ -17,7 +17,11 @@ module.exports = (sequelize) => {
       allowNull: false,
     },
     category: {
-      type: DataTypes.ENUM('Projects', 'News'),
+      type: DataTypes.ENUM('Projects', 'Course', 'News'),
+      allowNull: false,
+    },
+    status: {
+      type: DataTypes.ENUM('Pause', 'InProgres', 'Approved'),
       allowNull: false,
     },
     voteCount: {
