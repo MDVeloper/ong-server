@@ -114,8 +114,7 @@ router.get('/all', async (req, res) => {
             where: {
                 email: allUsers[i].dataValues.email
             },
-        }
-        );
+        });
         allUsers[i].dataValues.donations = thisDonations
     }
 
