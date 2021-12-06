@@ -1,4 +1,4 @@
-const { default: axios } = require('axios');
+const axios = require('axios');
 const { Router, response } = require('express');
 const mercadopago = require("mercadopago");
 const { Transactions } = require('../db.js');
@@ -24,14 +24,11 @@ router.post('/process_payment', async (req, res, next) => {
   const { body } = req;
   const { payer } = body;
 
-  // console.log(body)
+  console.log(body)
   const paymentData = { // los q no estan comentados, son los OBLIGATORIOS <---
     transaction_amount: Number(body.transaction_amount),
     token: body.token,
-    description: body.description,
-    installments: Number(body.installments),
     payment_method_id: body.payment_method_id,
-    issuer_id: body.issuer_id,
     payer: {
       email: payer.email,
       identification: {
@@ -40,7 +37,6 @@ router.post('/process_payment', async (req, res, next) => {
       }
     }
   };
-console.log(req.body)
   // Guardar pago
   // console.log(mercadopago.payment.save)
   mercadopago.payment.save(paymentData)
@@ -50,7 +46,7 @@ console.log(req.body)
         status: "Approved",
         paymentMethod: "MercadoPago",
         amount: response.body.transaction_amount,
-        date: response.body.date_created,
+        date: "26/04/2001",
         email: payer.email
       })
     })
