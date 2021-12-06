@@ -4,15 +4,17 @@ const { Users, Transactions } = require('../db.js');
 const router = Router();
 
 router.post('/', async (req, res, next) => {
-    const { email, amount, date, estatus, paymentMethod } = req.body;
-
+    let { email, amount, date, estatus, paymentMethod } = req.body;
+    console.log(email)
+    let intAmount = parseInt(amount)
+    console.log("AMOUNT", intAmount)
     try {
         let transaction = await Transactions.create({
-            amount,
-            date,
+            amount: intAmount,
+            date: date,
             status: "Approved",
             paymentMethod: "PayPal",
-            email
+            email: "alisagomez@gmail.com"
         })
 
         return res.json(transaction)
