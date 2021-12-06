@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { Users, Transactions} = require('../db.js');
+const { Users, Transactions } = require('../db.js');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const localStrategy = require("passport-local").Strategy;
@@ -10,19 +10,19 @@ const router = Router();
 
 // Funcion verificadora de token.
 function verifyTokenWasCreated(req, res, next) {
-	const headersAuthorization = req.headers["authorization"]; // Necesitamos enviar el dato en los headers
+    const headersAuthorization = req.headers["authorization"]; // Necesitamos enviar el dato en los headers
 
     console.log("headersAuthorization");
-	console.log(headersAuthorization);
+    console.log(headersAuthorization);
 
-	if (typeof headersAuthorization !== 'undefined') {
-		const authSplit = headersAuthorization.split(" ");
-		const authToken = authSplit[1]; // [authorization, token] 0 1
-		req.token = authToken; // seteamos el request con el token en una propiedad "token"
-		next()
-	} else {
-		res.status(403).send("authorization header undefined");
-	}
+    if (typeof headersAuthorization !== 'undefined') {
+        const authSplit = headersAuthorization.split(" ");
+        const authToken = authSplit[1]; // [authorization, token] 0 1
+        req.token = authToken; // seteamos el request con el token en una propiedad "token"
+        next()
+    } else {
+        res.status(403).send("authorization header undefined");
+    }
 }
 
 /*  Verificamos si el token coincide con el anterior o no.
@@ -30,7 +30,7 @@ function verifyTokenWasCreated(req, res, next) {
 function verifyMatch(req, res, next) {
     console.log("verifyMatch");
     jwt.verify(req.token, 'TODO_ENV', (error, data) => {
-        if (error) return res.status(403).send("tokens doesn't match");;    
+        if (error) return res.status(403).send("tokens doesn't match");;
         console.log("Verify OK");
         next();
     })
@@ -48,6 +48,8 @@ router.post("/register", async (req, res, next) => {
 
         hash = await bcrypt.hash(password, 10);
 
+        console.log(req.body)
+
         let usersInstance = await Users.create({
             name: name,
             lastName: lastName,
@@ -60,8 +62,18 @@ router.post("/register", async (req, res, next) => {
             volunteer: volunteer,
             course: course,
         });
-
-        res.status(200).json(usersInstance);
+        
+        let tokenid = await Users.findOne({
+            where: {
+                email: usersInstance.email
+            }
+        })
+        
+        const { id } = tokenid
+        const token = jwt.sign({"id" : id}, 'TODO_ENV');
+        console.log(token);
+        return res.status(200).json({ token });
+        // return res.status(200).json(usersInstance);
     }
     catch (error) {
         next(error);
@@ -102,6 +114,37 @@ router.get("/detail", isAuthenticated, verifyTokenWasCreated, verifyMatch, async
 
 })
 
+// router.get("/detail", isAuthenticated, verifyTokenWasCreated, verifyMatch, async (req, res, next) => {
+//     const { email } = req.query;
+
+//     if (typeof email === "string") {
+//         try {
+//             let user = await Users.findOne({
+//                 where: {
+//                     email: email,
+//                 }
+//             });
+
+//             let thisUserDonations = await Transactions.findAll({
+//                 where: {
+//                     email: user.dataValues.email
+//                 },
+//             }
+//             );
+
+//             user.dataValues.donations = thisUserDonations
+//             res.status(200).json(user);
+//         }
+//         catch (error) {
+//             next(error);
+//         }
+//     }
+//     else {
+//         res.status(400).send("Id invalido");
+//     }
+
+// })
+
 // Get /all (debugging)
 router.get('/all', async (req, res) => {
     const { email } = req.body;
@@ -122,7 +165,7 @@ router.get('/all', async (req, res) => {
 })
 
 // Definimos el login de passport modificando los campos usernameField por "email" y passwordField a "password" por si acaso.
-passport.use(new localStrategy({ usernameField: "email", passwordField: "password"}, async (email, password, done) => {
+passport.use(new localStrategy({ usernameField: "email", passwordField: "password" }, async (email, password, done) => {
     console.log("localStrategy");
     try {
         // Buscamos al usuario por email
@@ -133,9 +176,9 @@ passport.use(new localStrategy({ usernameField: "email", passwordField: "passwor
         });
 
         // Verificamos si encontro un usuario
-        if (!userInstance){
+        if (!userInstance) {
             console.log("no userInstance");
-            return done(null, false, {message: "Usuario no encontrado"});
+            return done(null, false, { message: "Usuario no encontrado" });
         }
 
         // Validamos la contraseña
@@ -143,10 +186,10 @@ passport.use(new localStrategy({ usernameField: "email", passwordField: "passwor
             const verify = await bcrypt.compare(password, userHashedPassword)
             return verify;
         })(password, userInstance.dataValues.password);
-        
+
         console.log(validate);
 
-        if (!validate){
+        if (!validate) {
             console.log("no paso el validate");
             return done(null, false, { message: "Contraseña Incorrecta" });
         }
@@ -169,33 +212,33 @@ passport.serializeUser((user, done) => {
     console.log("serializing...");
     console.log(user);
     done(null, user.id);
-  });
-  
+});
+
 // Al deserealizar la información del usuario va a quedar almacenada en req.user
 passport.deserializeUser(async (id, done) => {
-    console.log("deserializing...");  
+    console.log("deserializing...");
 
     try {
         let foundedUser = await Users.findByPk(id);
-  
-        if(foundedUser){
+
+        if (foundedUser) {
             return done(null, foundedUser)
         }
-        return done(null, false, {message: "Usuario no encontrado para deserealizar"});
+        return done(null, false, { message: "Usuario no encontrado para deserealizar" });
     }
-    catch(error) {
+    catch (error) {
         console.log("err");
-        return done(null, false, {message: "Algo fallo durante la deserializacion"});
+        return done(null, false, { message: "Algo fallo durante la deserializacion" });
     }
 });
 
 function isAuthenticated(req, res, next) {
     console.log("isAuthenticated");
-    if(req.isAuthenticated()) {
+    if (req.isAuthenticated()) {
         console.log(req);
-      next();
+        next();
     } else {
-      res.redirect("/login");
+        res.redirect("/login");
     }
 }
 
@@ -203,7 +246,7 @@ function isAuthenticated(req, res, next) {
 router.post('/login', passport.authenticate('local', { failureRedirect: '/loginFail' }), async (req, res, next) => {
     console.log("/login!");
 
-    const {email} = req.body;
+    const { email } = req.body;
 
     try {
         let foundUser = await Users.findOne({
@@ -212,22 +255,23 @@ router.post('/login', passport.authenticate('local', { failureRedirect: '/loginF
             }
         });
 
-        if(foundUser){
-            const token = jwt.sign({foundUser}, 'TODO_ENV');
+        if (foundUser) {
+            const { id } = foundUser
+            const token = jwt.sign({"id" : id}, 'TODO_ENV');
             console.log(token);
-            return res.json({token}); // { "token": "eyJhbGciOiJ...........etc etc" }
+            return res.json({ token }); // { "token": "eyJhbGciOiJ...........etc etc" }
         }
         else {
             const token = undefined;
             console.log(token);
-            return res.json({token}) // undefined {}
+            return res.json({ token }) // undefined {}
         }
     } catch (error) {
         next(error)
     }
 
     res.redirect('/loginOK');
-  });
+});
 /*
 router.post('/login', async (req, res, next) => {
     const {email, password} = req.body;
@@ -265,9 +309,6 @@ router.post('/login', async (req, res, next) => {
 });*/
 
 // Ruta logout
-router.get("/logout", async (req, res, next) => {
-    req.session.destroy()
-});
 
 module.exports = router;
 

@@ -64,7 +64,6 @@ router.get('/', async (req, res, next) => {
         let allArticles = await Articles.findAll({
             attributes: ["id", "title", "img", "description", "category", "voteCount", "createdAt"],
         });
-
         //Promise.all(allUsers).then(resp => res.status(200).json(allArticles));
         return res.status(200).json(allArticles);
     };
