@@ -49,7 +49,7 @@ router.post("/register", async (req, res, next) => {
         hash = await bcrypt.hash(password, 10);
 
         console.log(req.body)
-
+        
         let usersInstance = await Users.create({
             name: name,
             lastName: lastName,
@@ -75,7 +75,9 @@ router.post("/register", async (req, res, next) => {
         return res.status(200).json({ token });
         // return res.status(200).json(usersInstance);
     }
-    catch (error) {
+    catch (error){
+        // error.parent.constraint "constraint": "users_email_key",
+        res.status(500).json(error.parent?.constraint);
         next(error);
     }
 
@@ -308,7 +310,57 @@ router.post('/login', async (req, res, next) => {
     }
 });*/
 
-// Ruta logout
+// Modificacion de usuarios
+router.put("/:id", async (req, res, next) => {
+
+    try {
+        const { id } = req.params;
+        const { name, lastName, password, email, country, state, birthday, privilege, volunteer, course } = req.body;
+
+        hash = password ? await bcrypt.hash(password, 10) : undefined;
+
+        let usersInstance = await Users.findByPk(id);
+
+        let nameUpdated = name ? name : usersInstance.name
+        let lastNameUpdated = lastName ? lastName : usersInstance.lastName
+        let passwordUpdated = password ? hash : usersInstance.password
+        let emailUpdated = email ? email : usersInstance.email
+        let countryUpdated = country ? country : usersInstance.country
+        let stateUpdated = state ? state : usersInstance.state
+        let birthdayUpdated = birthday ? birthday : usersInstance.birthday
+        let privilegeUpdated = privilege ? privilege : usersInstance.privilege
+        let volunteerUpdated = volunteer ? volunteer : usersInstance.volunteer
+        let courseUpdated = course ? course : usersInstance.course
+
+        /*
+        let tokenid = await Users.findOne({
+            where: {
+                email: usersInstance.email
+            }
+        })
+        */
+        //return res.status(200).json({ token });
+        let updated = await usersInstance.update({
+            name: nameUpdated,
+            lastName: lastNameUpdated,
+            password: passwordUpdated,
+            email: emailUpdated,
+            country: countryUpdated,
+            state: stateUpdated,
+            birthday: birthdayUpdated,
+            privilege: privilegeUpdated,
+            volunteer: volunteerUpdated,
+            course: courseUpdated
+        });
+
+        res.status(200).json(updated)
+    }
+    catch (error){
+        // error.parent.constraint "constraint": "users_email_key",
+        return res.status(500).json(error.parent?.constraint);
+    }
+
+})
 
 module.exports = router;
 
