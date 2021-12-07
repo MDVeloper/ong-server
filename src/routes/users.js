@@ -82,7 +82,7 @@ router.post("/register", async (req, res, next) => {
 })
 
 // Get /detail
-router.get("/detail", isAuthenticated, verifyTokenWasCreated, verifyMatch, async (req, res, next) => {
+router.get("/detail", async (req, res, next) => {
     const { id } = req.query;
     let integerId = parseInt(id);
 
@@ -91,7 +91,8 @@ router.get("/detail", isAuthenticated, verifyTokenWasCreated, verifyMatch, async
             let user = await Users.findOne({
                 where: {
                     id: integerId,
-                }
+                },
+                attributes: ["id", "name", "lastName", "email", "country", "state", "birthday", "privilege", "volunteer", "course", "createdAt"],
             });
 
             let thisUserDonations = await Transactions.findAll({
@@ -114,36 +115,6 @@ router.get("/detail", isAuthenticated, verifyTokenWasCreated, verifyMatch, async
 
 })
 
-// router.get("/detail", isAuthenticated, verifyTokenWasCreated, verifyMatch, async (req, res, next) => {
-//     const { email } = req.query;
-
-//     if (typeof email === "string") {
-//         try {
-//             let user = await Users.findOne({
-//                 where: {
-//                     email: email,
-//                 }
-//             });
-
-//             let thisUserDonations = await Transactions.findAll({
-//                 where: {
-//                     email: user.dataValues.email
-//                 },
-//             }
-//             );
-
-//             user.dataValues.donations = thisUserDonations
-//             res.status(200).json(user);
-//         }
-//         catch (error) {
-//             next(error);
-//         }
-//     }
-//     else {
-//         res.status(400).send("Id invalido");
-//     }
-
-// })
 
 // Get /all (debugging)
 router.get('/all', async (req, res) => {
