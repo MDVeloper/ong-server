@@ -1,61 +1,58 @@
-const { Router } = require('express');
+
+const { Router, response } = require('express');
+
 const mercadopago = require("mercadopago");
-
-
-// Almacenamos en memoria la pKey y el accessToken
-const mercadoPagoPublicKey = process.env.MERCADO_PAGO_SAMPLE_PUBLIC_KEY;
-const mercadoPagoAccessToken = process.env.MERCADO_PAGO_SAMPLE_ACCESS_TOKEN;
-
-// Verificamos que se hayan seteado
-if (!mercadoPagoPublicKey || !mercadoPagoAccessToken) {
-    !mercadoPagoPublicKey ? console.log("Error: public key not defined") : console.log("Error: Access Token not defined");
-}
-
-// Steamos el Access Token
-mercadopago.configurations.setAccessToken(mercadoPagoAccessToken);
-
 
 const router = Router();
 
-// Registro de articulos
-router.post('/process_payment', async (req, res, next) => {
-    const { body } = req;
-    const { payer } = body;
-    
-    const paymentData = { // los q no estan comentados, son los OBLIGATORIOS <---
-      transaction_amount: Number(body.transactionAmount),
-      token: body.token,
-      //description: body.description,
-      installments: Number(body.installments),
-      payment_method_id: body.paymentMethodId,
-      //issuer_id: body.issuerId,
-      payer: {
-        email: payer.email,
-        /*identification: {
-          type: payer.identification.docType,
-          number: payer.identification.docNumber
-        }*/
-      }
-    };
-    
-    // Guardar pago
-    mercadopago.payment.save(paymentData)
-    .then(function(response) { // fulfilled
-      const { response: data } = response;
-      res.status(response.status).json({
-        status_detail: data.status_detail,
-        status: data.status,
-        id: data.id
-      });
-    })
-    .catch(function(error) { // error
-      res.status(error.status).send(error);
-    });
+// Almacenamos en memoria la pKey y el accessToken
+const mercadoPagoPublicKey = "TEST-d9ce698b-8910-455b-b6c7-3d2f64de1f85";
+const mercadoPagoAccessToken = "TEST-6855450579427110-110110-b07a702ed800f3deb656e5e22c0095e9-139834795";
+
+// Verificamos que se hayan seteado
+if (!mercadoPagoPublicKey || !mercadoPagoAccessToken) {
+	!mercadoPagoPublicKey ? console.log("Error: public key not defined") : console.log("Error: Access Token not defined");
+}
+
+// Steamos el Access Token
+mercadopago.configure({
+	access_token: mercadoPagoAccessToken,
 });
 
-// Test
-router.get('/', (req, res) => {
-    res.send("Mercadopago");
-})
+router.post("/create_preference", (req, res) => {
+	console.log(req.body)
+	let preference = {
+		items: [
+			{
+				title: req.body.description,
+				unit_price: Number(req.body.price),
+				quantity: Number(req.body.quantity),
+			}
+		],
+		back_urls: {
+			"success": "http://localhost:3001/home",
+			"failure": "http://localhost:3001/home",
+			"pending": "http://localhost:3001/home"
+		},
+		auto_return: "approved",
+	};
+
+	mercadopago.preferences.create(preference)
+		.then(function (response) {
+			res.json({
+				id: response.body.id
+			});
+		}).catch(function (error) {
+			console.log(error);
+		});
+});
+
+router.get('/feedback', function (req, res) {
+	res.json({
+		Payment: req.query.payment_id,
+		Status: req.query.status,
+		MerchantOrder: req.query.merchant_order_id
+	});
+});
 
 module.exports = router;
