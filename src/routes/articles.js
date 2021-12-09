@@ -41,7 +41,7 @@ router.get('/', async (req, res, next) => {
         }
     }
     else if (category) {
-        if (category === "News" || category === "Projects") {
+        if (category === "News" || category === "Projects" || category === "Course") {
             try {
                 let article = await Articles.findAll({
                     where: {
