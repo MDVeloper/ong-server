@@ -18,7 +18,6 @@ router.use("/users", usersRoute);
 router.use("/articles", articlesRoute);
 router.use("/donations", donationsRoute);
 router.use("/mp", mp);
-router.use("/checkout", mpCheckout);
 
 // Main path
 router.get('/', (req, res) => {

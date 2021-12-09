@@ -2,6 +2,7 @@
 const { Router, response } = require('express');
 
 const mercadopago = require("mercadopago");
+const { Users, Transactions } = require('../db.js');
 
 const router = Router();
 
@@ -30,12 +31,23 @@ router.post("/create_preference", (req, res) => {
 			}
 		],
 		back_urls: {
-			"success": "http://localhost:3001/home",
-			"failure": "http://localhost:3001/home",
-			"pending": "http://localhost:3001/home"
+			"success": "http://localhost:3000/",
+			"failure": "http://localhost:3000/",
+			"pending": "http://localhost:3000/"
 		},
-		auto_return: "approved",
+		auto_return: "all",
 	};
+	
+	Transactions.create({
+		amount: req.body.price,
+		date: "01/01/01",
+		status: "Approved",
+		paymentMethod: "MercadoPago",
+		email: req.body.email
+	})
+	.then((resp) => {
+		// res.send("OK")
+	})
 
 	mercadopago.preferences.create(preference)
 		.then(function (response) {

@@ -48,6 +48,8 @@ router.post("/register", async (req, res, next) => {
 
         hash = await bcrypt.hash(password, 10);
 
+        console.log(req.body)
+
         let usersInstance = await Users.create({
             name: name,
             lastName: lastName,
@@ -60,8 +62,18 @@ router.post("/register", async (req, res, next) => {
             volunteer: volunteer,
             course: course,
         });
-
-        res.status(200).json(usersInstance);
+        
+        let tokenid = await Users.findOne({
+            where: {
+                email: usersInstance.email
+            }
+        })
+        
+        const { id } = tokenid
+        const token = jwt.sign({"id" : id}, 'TODO_ENV');
+        console.log(token);
+        return res.status(200).json({ token });
+        // return res.status(200).json(usersInstance);
     }
     catch (error) {
         next(error);
@@ -70,7 +82,7 @@ router.post("/register", async (req, res, next) => {
 })
 
 // Get /detail
-router.get("/detail", isAuthenticated, verifyTokenWasCreated, verifyMatch, async (req, res, next) => {
+router.get("/detail", async (req, res, next) => {
     const { id } = req.query;
     let integerId = parseInt(id);
 
@@ -79,7 +91,8 @@ router.get("/detail", isAuthenticated, verifyTokenWasCreated, verifyMatch, async
             let user = await Users.findOne({
                 where: {
                     id: integerId,
-                }
+                },
+                attributes: ["id", "name", "lastName", "email", "country", "state", "birthday", "privilege", "volunteer", "course", "createdAt"],
             });
 
             let thisUserDonations = await Transactions.findAll({
@@ -203,7 +216,7 @@ function isAuthenticated(req, res, next) {
 router.post('/login', passport.authenticate('local', { failureRedirect: '/loginFail' }), async (req, res, next) => {
     console.log("/login!");
 
-    const {email} = req.body;
+    const { email } = req.body;
 
     try {
         let foundUser = await Users.findOne({
@@ -212,22 +225,23 @@ router.post('/login', passport.authenticate('local', { failureRedirect: '/loginF
             }
         });
 
-        if(foundUser){
-            const token = jwt.sign({foundUser}, 'TODO_ENV');
+        if (foundUser) {
+            const { id } = foundUser
+            const token = jwt.sign({"id" : id}, 'TODO_ENV');
             console.log(token);
-            return res.json({token}); // { "token": "eyJhbGciOiJ...........etc etc" }
+            return res.json({ token }); // { "token": "eyJhbGciOiJ...........etc etc" }
         }
         else {
             const token = undefined;
             console.log(token);
-            return res.json({token}) // undefined {}
+            return res.json({ token }) // undefined {}
         }
     } catch (error) {
         next(error)
     }
 
     res.redirect('/loginOK');
-  });
+});
 /*
 router.post('/login', async (req, res, next) => {
     const {email, password} = req.body;
