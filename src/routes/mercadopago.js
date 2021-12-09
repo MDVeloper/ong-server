@@ -1,8 +1,7 @@
-
 const { Router, response } = require('express');
-
 const mercadopago = require("mercadopago");
 const { Users, Transactions } = require('../db.js');
+
 
 const router = Router();
 
@@ -48,7 +47,7 @@ router.post("/create_preference", (req, res) => {
 	.then((resp) => {
 		// res.send("OK")
 	})
-
+  
 	mercadopago.preferences.create(preference)
 		.then(function (response) {
 			res.json({

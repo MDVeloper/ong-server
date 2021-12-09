@@ -27,14 +27,17 @@ router.post('/', async (req, res, next) => {
 router.get('/', async (req, res) => {
 
     const { email } = req.body;
-
+    
+    // console.log(email)
     if (email) {
+        console.log(email)
         let transactionsByEmail = await Transactions.findAll({
             where: {
                 email: email
             },
         }
         )
+        console.log(transactionsByEmail)
         return res.json(transactionsByEmail)
     }
     else {
