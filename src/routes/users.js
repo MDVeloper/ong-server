@@ -217,8 +217,6 @@ function isAuthenticated(req, res, next) {
 
 // Ruta para login
 router.post('/login', passport.authenticate('local', { failureRedirect: '/loginFail' }), async (req, res, next) => {
-    console.log("/login!");
-
     const { email } = req.body;
 
     try {
@@ -245,45 +243,9 @@ router.post('/login', passport.authenticate('local', { failureRedirect: '/loginF
 
     res.redirect('/loginOK');
 });
-/*
-router.post('/login', async (req, res, next) => {
-    const {email, password} = req.body;
-
-    if (email && password) {
-        try {
-            let logUser = await Users.findOne({
-                where: {
-                    email: email,
-                    password: password
-                }
-            });
-    
-            if(logUser){
-                //let validUser = true;
-                //return res.json(validUser)
-                const token = jwt.sign({logUser}, 'TODO_ENV');
-                console.log(token);
-                return res.json({token}); // { "token": "eyJhbGciOiJ...........etc etc" }
-            }
-            else {
-                //let invalidUser = false;
-                //return res.json(invalidUser)
-                const token = undefined;
-                console.log(token);
-                return res.json({token}) // undefined {}
-            }
-        } catch (error) {
-            next(error)
-        }
-    }
-    else {
-        return res.send("User not found")
-    }
-});*/
 
 // Modificacion de usuarios
 router.put("/:id", async (req, res, next) => {
-
     try {
         const { id } = req.params;
         const { name, lastName, password, email, country, state, birthday, privilege, volunteer, course } = req.body;
@@ -327,7 +289,6 @@ router.put("/:id", async (req, res, next) => {
         res.status(200).json(updated)
     }
     catch (error){
-        // error.parent.constraint "constraint": "users_email_key",
         return res.status(500).json(error.parent?.constraint);
     }
 
