@@ -9,7 +9,7 @@ const router = Router();
 router.post('/creacion', async (req, res, next) => {
 
     try {
-        const { title, img, description, category } = req.body;
+        const { title, img, description, category, status } = req.body;
 
         let articleInstance = await Articles.create({
             title: title,
@@ -17,6 +17,7 @@ router.post('/creacion', async (req, res, next) => {
             description: description,
             category: category,
             voteCount: 0,
+            status: status
         });
 
         res.status(200).json(articleInstance);
@@ -62,7 +63,7 @@ router.get('/', async (req, res, next) => {
     }
     else {
         let allArticles = await Articles.findAll({
-            attributes: ["id", "title", "img", "description", "category", "voteCount", "createdAt"],
+            attributes: ["id", "title", "img", "description", "category", "voteCount", "status", "createdAt"],
         });
         //Promise.all(allUsers).then(resp => res.status(200).json(allArticles));
         return res.status(200).json(allArticles);

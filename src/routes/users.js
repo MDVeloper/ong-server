@@ -49,7 +49,7 @@ router.post("/register", async (req, res, next) => {
         hash = await bcrypt.hash(password, 10);
 
         console.log(req.body)
-        
+
         let usersInstance = await Users.create({
             name: name,
             lastName: lastName,
@@ -62,20 +62,20 @@ router.post("/register", async (req, res, next) => {
             volunteer: volunteer,
             course: course,
         });
-        
+
         let tokenid = await Users.findOne({
             where: {
                 email: usersInstance.email
             }
         })
-        
+
         const { id } = tokenid
-        const token = jwt.sign({"id" : id}, 'TODO_ENV');
+        const token = jwt.sign({ "id": id }, 'TODO_ENV');
         console.log(token);
         return res.status(200).json({ token });
         // return res.status(200).json(usersInstance);
     }
-    catch (error){
+    catch (error) {
         // error.parent.constraint "constraint": "users_email_key",
         res.status(500).json(error.parent?.constraint);
         next(error);
@@ -220,8 +220,6 @@ function isAuthenticated(req, res, next) {
 
 // Ruta para login
 router.post('/login', passport.authenticate('local', { failureRedirect: '/loginFail' }), async (req, res, next) => {
-    console.log("/login!");
-
     const { email } = req.body;
 
     try {
@@ -232,8 +230,8 @@ router.post('/login', passport.authenticate('local', { failureRedirect: '/loginF
         });
 
         if (foundUser) {
-            const { id } = foundUser
-            const token = jwt.sign({"id" : id}, 'TODO_ENV');
+            const { id, privilege } = foundUser
+            const token = jwt.sign({ "id": id, "privilege": privilege }, 'TODO_ENV');
             console.log(token);
             return res.json({ token }); // { "token": "eyJhbGciOiJ...........etc etc" }
         }
@@ -248,45 +246,9 @@ router.post('/login', passport.authenticate('local', { failureRedirect: '/loginF
 
     res.redirect('/loginOK');
 });
-/*
-router.post('/login', async (req, res, next) => {
-    const {email, password} = req.body;
-
-    if (email && password) {
-        try {
-            let logUser = await Users.findOne({
-                where: {
-                    email: email,
-                    password: password
-                }
-            });
-    
-            if(logUser){
-                //let validUser = true;
-                //return res.json(validUser)
-                const token = jwt.sign({logUser}, 'TODO_ENV');
-                console.log(token);
-                return res.json({token}); // { "token": "eyJhbGciOiJ...........etc etc" }
-            }
-            else {
-                //let invalidUser = false;
-                //return res.json(invalidUser)
-                const token = undefined;
-                console.log(token);
-                return res.json({token}) // undefined {}
-            }
-        } catch (error) {
-            next(error)
-        }
-    }
-    else {
-        return res.send("User not found")
-    }
-});*/
 
 // Modificacion de usuarios
 router.put("/:id", async (req, res, next) => {
-
     try {
         const { id } = req.params;
         const { name, lastName, password, email, country, state, birthday, privilege, volunteer, course } = req.body;
@@ -329,8 +291,7 @@ router.put("/:id", async (req, res, next) => {
 
         res.status(200).json(updated)
     }
-    catch (error){
-        // error.parent.constraint "constraint": "users_email_key",
+    catch (error) {
         return res.status(500).json(error.parent?.constraint);
     }
 
