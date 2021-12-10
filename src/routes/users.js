@@ -49,7 +49,7 @@ router.post("/register", async (req, res, next) => {
         hash = await bcrypt.hash(password, 10);
 
         console.log(req.body)
-        
+
         let usersInstance = await Users.create({
             name: name,
             lastName: lastName,
@@ -62,20 +62,20 @@ router.post("/register", async (req, res, next) => {
             volunteer: volunteer,
             course: course,
         });
-        
+
         let tokenid = await Users.findOne({
             where: {
                 email: usersInstance.email
             }
         })
-        
+
         const { id } = tokenid
-        const token = jwt.sign({"id" : id}, 'TODO_ENV');
+        const token = jwt.sign({ "id": id }, 'TODO_ENV');
         console.log(token);
         return res.status(200).json({ token });
         // return res.status(200).json(usersInstance);
     }
-    catch (error){
+    catch (error) {
         // error.parent.constraint "constraint": "users_email_key",
         res.status(500).json(error.parent?.constraint);
         next(error);
@@ -227,8 +227,8 @@ router.post('/login', passport.authenticate('local', { failureRedirect: '/loginF
         });
 
         if (foundUser) {
-            const { id } = foundUser
-            const token = jwt.sign({"id" : id}, 'TODO_ENV');
+            const { id, privilege } = foundUser
+            const token = jwt.sign({ "id": id, "privilege": privilege }, 'TODO_ENV');
             console.log(token);
             return res.json({ token }); // { "token": "eyJhbGciOiJ...........etc etc" }
         }
@@ -288,7 +288,7 @@ router.put("/:id", async (req, res, next) => {
 
         res.status(200).json(updated)
     }
-    catch (error){
+    catch (error) {
         return res.status(500).json(error.parent?.constraint);
     }
 
