@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { Users, Transactions } = require('../db.js');
+const { Users, Transactions, Articles } = require('../db.js');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const localStrategy = require("passport-local").Strategy;
@@ -95,6 +95,9 @@ router.get("/detail", async (req, res, next) => {
                     id: integerId,
                 },
                 attributes: ["id", "name", "lastName", "email", "country", "state", "birthday", "privilege", "volunteer", "course", "createdAt"],
+                include: {
+                    model: Articles,
+                }
             });
 
             let thisUserDonations = await Transactions.findAll({
