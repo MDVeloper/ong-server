@@ -1,10 +1,11 @@
 const { Router } = require('express');
-const { Users, Transactions, Articles } = require('../db.js');
+const { Users, Transactions } = require('../db.js');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const localStrategy = require("passport-local").Strategy;
+const googleStrategy = require("passport-google-oauth2").Strategy;
 const bcrypt = require('bcrypt');
-var session = require('express-session');
+require('dotenv').config();
 
 const router = Router();
 
@@ -35,11 +36,6 @@ function verifyMatch(req, res, next) {
         next();
     })
 }
-
-// Main path
-router.get('/', (req, res) => {
-    res.send("soy users");
-})
 
 // Registro de usuarios
 router.post("/register", async (req, res, next) => {
@@ -95,9 +91,6 @@ router.get("/detail", async (req, res, next) => {
                     id: integerId,
                 },
                 attributes: ["id", "name", "lastName", "email", "country", "state", "birthday", "privilege", "volunteer", "course", "createdAt"],
-                include: {
-                    model: Articles,
-                }
             });
 
             let thisUserDonations = await Transactions.findAll({
@@ -139,6 +132,17 @@ router.get('/all', async (req, res) => {
 
     return res.status(200).json(allUsers);
 })
+
+passport.use(new googleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    passReqToCallback: true
+ }, async (request, accessToken, refreshToken, profile, done) => {
+    console.log("PROFILE!");
+    console.log(profile);
+    return done(null, profile);
+}))
 
 // Definimos el login de passport modificando los campos usernameField por "email" y passwordField a "password" por si acaso.
 passport.use(new localStrategy({ usernameField: "email", passwordField: "password" }, async (email, password, done) => {
@@ -187,15 +191,18 @@ passport.use(new localStrategy({ usernameField: "email", passwordField: "passwor
 passport.serializeUser((user, done) => {
     console.log("serializing...");
     console.log(user);
-    done(null, user.id);
+    done(null, user);
 });
 
 // Al deserealizar la información del usuario va a quedar almacenada en req.user
-passport.deserializeUser(async (id, done) => {
+passport.deserializeUser(async (user, done) => {
     console.log("deserializing...");
+    console.log(user);
+    
+    if (user.provider) return done(null, user);
 
     try {
-        let foundedUser = await Users.findByPk(id);
+        let foundedUser = await Users.findByPk(user.id);
 
         if (foundedUser) {
             return done(null, foundedUser)
@@ -215,6 +222,17 @@ function isAuthenticated(req, res, next) {
         next();
     } else {
         res.redirect("/login");
+    }
+}
+
+// Auth middleware that checks if the user is logged in
+const isLoggedIn = (req, res, next) => {
+    console.log("isLoggedIn");
+    console.log(req.user);
+    if (req.user) {
+        next();
+    } else {
+        res.sendStatus(401);
     }
 }
 
@@ -246,6 +264,24 @@ router.post('/login', passport.authenticate('local', { failureRedirect: '/loginF
 
     res.redirect('/loginOK');
 });
+
+// In this route you can see that if the user is logged in u can acess his info in: req.user
+router.get('/good', isLoggedIn, (req, res) =>{
+    //res.render("pages/profile",{name:req.user.displayName,pic:req.user.photos[0].value,email:req.user.emails[0].value})
+    res.send("Excelente");
+})
+
+// Auth Routes
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/failed' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    //res.redirect('users/good');
+    //res.redirect('../users/good');
+    res.redirect('http://localhost:3001/users/good');
+  }
+);
 
 // Modificacion de usuarios
 router.put("/:id", async (req, res, next) => {

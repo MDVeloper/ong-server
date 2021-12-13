@@ -24,9 +24,10 @@
     "ioredis": "^4.19.2",
     "jsonwebtoken": "^8.5.1",
     "mercadopago": "^1.5.9",
-    "nodemon": "^2.0.6",
     "morgan": "^1.10.0",
+    "nodemon": "^2.0.6",
     "passport": "^0.5.0",
+    "passport-google-oauth2": "^0.2.0",
     "passport-local": "^1.0.0",
     "pg": "^8.5.1",
     "sequelize": "^6.3.5"
