@@ -237,7 +237,7 @@ const isLoggedIn = (req, res, next) => {
 }
 
 // Ruta para login
-router.post('/login', passport.authenticate('local', { failureRedirect: '/loginFail' }), async (req, res, next) => {
+router.post('/login', async (req, res, next) => {
     const { email } = req.body;
 
     try {
