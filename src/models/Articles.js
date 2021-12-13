@@ -9,7 +9,7 @@ module.exports = (sequelize) => {
       allowNull: false,
     },
     img: {
-      type: DataTypes.STRING, // INTEGER ?
+      type: DataTypes.TEXT, // INTEGER ?
       allowNull: false,
     },
     description: {
@@ -21,8 +21,8 @@ module.exports = (sequelize) => {
       allowNull: false,
     },
     status: {
-      type: DataTypes.ENUM('Pause', 'InProgres', 'Approved'),
-      allowNull: false,
+      type: DataTypes.ENUM('Pause', 'InProgress', 'Approved'),
+      allowNull: true,
     },
     voteCount: {
       type: DataTypes.BIGINT,

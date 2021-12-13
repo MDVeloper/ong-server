@@ -9,7 +9,7 @@ const router = Router();
 router.post('/creacion', async (req, res, next) => {
 
     try {
-        const { title, img, description, category } = req.body;
+        const { title, img, description, category, status } = req.body;
 
         let articleInstance = await Articles.create({
             title: title,
@@ -17,6 +17,7 @@ router.post('/creacion', async (req, res, next) => {
             description: description,
             category: category,
             voteCount: 0,
+            status: status
         });
 
         res.status(200).json(articleInstance);
@@ -41,7 +42,7 @@ router.get('/', async (req, res, next) => {
         }
     }
     else if (category) {
-        if (category === "News" || category === "Projects") {
+        if (category === "News" || category === "Projects" || category === "Course") {
             try {
                 let article = await Articles.findAll({
                     where: {
@@ -62,9 +63,8 @@ router.get('/', async (req, res, next) => {
     }
     else {
         let allArticles = await Articles.findAll({
-            attributes: ["id", "title", "img", "description", "category", "voteCount", "createdAt"],
+            attributes: ["id", "title", "img", "description", "category", "voteCount", "status", "createdAt"],
         });
-
         //Promise.all(allUsers).then(resp => res.status(200).json(allArticles));
         return res.status(200).json(allArticles);
     };
@@ -133,5 +133,21 @@ router.delete('/delete', async (req, res, next) => {
         next(error)
     }
 });
+
+// Relacionar articulo (curso) a un usuario
+router.post('/asign', async (req, res, next) => {
+    
+    try {
+        const { userId, courseId } = req.body;
+    
+        let userInstance = await Users.findByPk(userId);
+        let articleInstance = await Articles.findByPk(courseId);
+
+        await articleInstance.setUsers(userInstance)
+
+    } catch(error) {
+        next(error);
+    }
+})
 
 module.exports = router;

@@ -2,6 +2,7 @@ const { Router } = require('express');
 const usersRoute = require('./users.js');
 const articlesRoute = require('./articles.js');
 const donationsRoute = require('./donations.js');
+const mpCheckout = require('./mercadopago.js');
 const mp = require('./mercadopago.js');
 const router = Router();
 

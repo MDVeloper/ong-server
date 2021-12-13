@@ -1,28 +1,29 @@
 const { Router } = require('express');
-const { Users, Transactions} = require('../db.js');
+const { Users, Transactions } = require('../db.js');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const localStrategy = require("passport-local").Strategy;
+const googleStrategy = require("passport-google-oauth2").Strategy;
 const bcrypt = require('bcrypt');
-var session = require('express-session');
+require('dotenv').config();
 
 const router = Router();
 
 // Funcion verificadora de token.
 function verifyTokenWasCreated(req, res, next) {
-	const headersAuthorization = req.headers["authorization"]; // Necesitamos enviar el dato en los headers
+    const headersAuthorization = req.headers["authorization"]; // Necesitamos enviar el dato en los headers
 
     console.log("headersAuthorization");
-	console.log(headersAuthorization);
+    console.log(headersAuthorization);
 
-	if (typeof headersAuthorization !== 'undefined') {
-		const authSplit = headersAuthorization.split(" ");
-		const authToken = authSplit[1]; // [authorization, token] 0 1
-		req.token = authToken; // seteamos el request con el token en una propiedad "token"
-		next()
-	} else {
-		res.status(403).send("authorization header undefined");
-	}
+    if (typeof headersAuthorization !== 'undefined') {
+        const authSplit = headersAuthorization.split(" ");
+        const authToken = authSplit[1]; // [authorization, token] 0 1
+        req.token = authToken; // seteamos el request con el token en una propiedad "token"
+        next()
+    } else {
+        res.status(403).send("authorization header undefined");
+    }
 }
 
 /*  Verificamos si el token coincide con el anterior o no.
@@ -30,16 +31,11 @@ function verifyTokenWasCreated(req, res, next) {
 function verifyMatch(req, res, next) {
     console.log("verifyMatch");
     jwt.verify(req.token, 'TODO_ENV', (error, data) => {
-        if (error) return res.status(403).send("tokens doesn't match");;    
+        if (error) return res.status(403).send("tokens doesn't match");;
         console.log("Verify OK");
         next();
     })
 }
-
-// Main path
-router.get('/', (req, res) => {
-    res.send("soy users");
-})
 
 // Registro de usuarios
 router.post("/register", async (req, res, next) => {
@@ -47,6 +43,8 @@ router.post("/register", async (req, res, next) => {
         const { name, lastName, password, email, country, state, birthday, privilege, volunteer, course } = req.body;
 
         hash = await bcrypt.hash(password, 10);
+
+        console.log(req.body)
 
         let usersInstance = await Users.create({
             name: name,
@@ -61,16 +59,28 @@ router.post("/register", async (req, res, next) => {
             course: course,
         });
 
-        res.status(200).json(usersInstance);
+        let tokenid = await Users.findOne({
+            where: {
+                email: usersInstance.email
+            }
+        })
+
+        const { id } = tokenid
+        const token = jwt.sign({ "id": id }, 'TODO_ENV');
+        console.log(token);
+        return res.status(200).json({ token });
+        // return res.status(200).json(usersInstance);
     }
     catch (error) {
+        // error.parent.constraint "constraint": "users_email_key",
+        res.status(500).json(error.parent?.constraint);
         next(error);
     }
 
 })
 
 // Get /detail
-router.get("/detail", isAuthenticated, verifyTokenWasCreated, verifyMatch, async (req, res, next) => {
+router.get("/detail", async (req, res, next) => {
     const { id } = req.query;
     let integerId = parseInt(id);
 
@@ -79,7 +89,8 @@ router.get("/detail", isAuthenticated, verifyTokenWasCreated, verifyMatch, async
             let user = await Users.findOne({
                 where: {
                     id: integerId,
-                }
+                },
+                attributes: ["id", "name", "lastName", "email", "country", "state", "birthday", "privilege", "volunteer", "course", "createdAt"],
             });
 
             let thisUserDonations = await Transactions.findAll({
@@ -102,6 +113,7 @@ router.get("/detail", isAuthenticated, verifyTokenWasCreated, verifyMatch, async
 
 })
 
+
 // Get /all (debugging)
 router.get('/all', async (req, res) => {
     const { email } = req.body;
@@ -121,8 +133,19 @@ router.get('/all', async (req, res) => {
     return res.status(200).json(allUsers);
 })
 
+passport.use(new googleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    passReqToCallback: true
+ }, async (request, accessToken, refreshToken, profile, done) => {
+    console.log("PROFILE!");
+    console.log(profile);
+    return done(null, profile);
+}))
+
 // Definimos el login de passport modificando los campos usernameField por "email" y passwordField a "password" por si acaso.
-passport.use(new localStrategy({ usernameField: "email", passwordField: "password"}, async (email, password, done) => {
+passport.use(new localStrategy({ usernameField: "email", passwordField: "password" }, async (email, password, done) => {
     console.log("localStrategy");
     try {
         // Buscamos al usuario por email
@@ -133,9 +156,9 @@ passport.use(new localStrategy({ usernameField: "email", passwordField: "passwor
         });
 
         // Verificamos si encontro un usuario
-        if (!userInstance){
+        if (!userInstance) {
             console.log("no userInstance");
-            return done(null, false, {message: "Usuario no encontrado"});
+            return done(null, false, { message: "Usuario no encontrado" });
         }
 
         // Validamos la contraseña
@@ -143,10 +166,10 @@ passport.use(new localStrategy({ usernameField: "email", passwordField: "passwor
             const verify = await bcrypt.compare(password, userHashedPassword)
             return verify;
         })(password, userInstance.dataValues.password);
-        
+
         console.log(validate);
 
-        if (!validate){
+        if (!validate) {
             console.log("no paso el validate");
             return done(null, false, { message: "Contraseña Incorrecta" });
         }
@@ -168,42 +191,54 @@ passport.use(new localStrategy({ usernameField: "email", passwordField: "passwor
 passport.serializeUser((user, done) => {
     console.log("serializing...");
     console.log(user);
-    done(null, user.id);
-  });
-  
+    done(null, user);
+});
+
 // Al deserealizar la información del usuario va a quedar almacenada en req.user
-passport.deserializeUser(async (id, done) => {
-    console.log("deserializing...");  
+passport.deserializeUser(async (user, done) => {
+    console.log("deserializing...");
+    console.log(user);
+    
+    if (user.provider) return done(null, user);
 
     try {
-        let foundedUser = await Users.findByPk(id);
-  
-        if(foundedUser){
+        let foundedUser = await Users.findByPk(user.id);
+
+        if (foundedUser) {
             return done(null, foundedUser)
         }
-        return done(null, false, {message: "Usuario no encontrado para deserealizar"});
+        return done(null, false, { message: "Usuario no encontrado para deserealizar" });
     }
-    catch(error) {
+    catch (error) {
         console.log("err");
-        return done(null, false, {message: "Algo fallo durante la deserializacion"});
+        return done(null, false, { message: "Algo fallo durante la deserializacion" });
     }
 });
 
 function isAuthenticated(req, res, next) {
     console.log("isAuthenticated");
-    if(req.isAuthenticated()) {
+    if (req.isAuthenticated()) {
         console.log(req);
-      next();
+        next();
     } else {
-      res.redirect("/login");
+        res.redirect("/login");
+    }
+}
+
+// Auth middleware that checks if the user is logged in
+const isLoggedIn = (req, res, next) => {
+    console.log("isLoggedIn");
+    console.log(req.user);
+    if (req.user) {
+        next();
+    } else {
+        res.sendStatus(401);
     }
 }
 
 // Ruta para login
 router.post('/login', passport.authenticate('local', { failureRedirect: '/loginFail' }), async (req, res, next) => {
-    console.log("/login!");
-
-    const {email} = req.body;
+    const { email } = req.body;
 
     try {
         let foundUser = await Users.findOne({
@@ -212,62 +247,91 @@ router.post('/login', passport.authenticate('local', { failureRedirect: '/loginF
             }
         });
 
-        if(foundUser){
-            const token = jwt.sign({foundUser}, 'TODO_ENV');
+        if (foundUser) {
+            const { id, privilege } = foundUser
+            const token = jwt.sign({ "id": id, "privilege": privilege }, 'TODO_ENV');
             console.log(token);
-            return res.json({token}); // { "token": "eyJhbGciOiJ...........etc etc" }
+            return res.json({ token }); // { "token": "eyJhbGciOiJ...........etc etc" }
         }
         else {
             const token = undefined;
             console.log(token);
-            return res.json({token}) // undefined {}
+            return res.json({ token }) // undefined {}
         }
     } catch (error) {
         next(error)
     }
 
     res.redirect('/loginOK');
-  });
-/*
-router.post('/login', async (req, res, next) => {
-    const {email, password} = req.body;
-
-    if (email && password) {
-        try {
-            let logUser = await Users.findOne({
-                where: {
-                    email: email,
-                    password: password
-                }
-            });
-    
-            if(logUser){
-                //let validUser = true;
-                //return res.json(validUser)
-                const token = jwt.sign({logUser}, 'TODO_ENV');
-                console.log(token);
-                return res.json({token}); // { "token": "eyJhbGciOiJ...........etc etc" }
-            }
-            else {
-                //let invalidUser = false;
-                //return res.json(invalidUser)
-                const token = undefined;
-                console.log(token);
-                return res.json({token}) // undefined {}
-            }
-        } catch (error) {
-            next(error)
-        }
-    }
-    else {
-        return res.send("User not found")
-    }
-});*/
-
-// Ruta logout
-router.get("/logout", async (req, res, next) => {
-    req.session.destroy()
 });
+
+// In this route you can see that if the user is logged in u can acess his info in: req.user
+router.get('/good', isLoggedIn, (req, res) =>{
+    //res.render("pages/profile",{name:req.user.displayName,pic:req.user.photos[0].value,email:req.user.emails[0].value})
+    res.send("Excelente");
+})
+
+// Auth Routes
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/failed' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    //res.redirect('users/good');
+    //res.redirect('../users/good');
+    res.redirect('http://localhost:3001/users/good');
+  }
+);
+
+// Modificacion de usuarios
+router.put("/:id", async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { name, lastName, password, email, country, state, birthday, privilege, volunteer, course } = req.body;
+
+        hash = password ? await bcrypt.hash(password, 10) : undefined;
+
+        let usersInstance = await Users.findByPk(id);
+
+        let nameUpdated = name ? name : usersInstance.name
+        let lastNameUpdated = lastName ? lastName : usersInstance.lastName
+        let passwordUpdated = password ? hash : usersInstance.password
+        let emailUpdated = email ? email : usersInstance.email
+        let countryUpdated = country ? country : usersInstance.country
+        let stateUpdated = state ? state : usersInstance.state
+        let birthdayUpdated = birthday ? birthday : usersInstance.birthday
+        let privilegeUpdated = privilege ? privilege : usersInstance.privilege
+        let volunteerUpdated = volunteer ? volunteer : usersInstance.volunteer
+        let courseUpdated = course ? course : usersInstance.course
+
+        /*
+        let tokenid = await Users.findOne({
+            where: {
+                email: usersInstance.email
+            }
+        })
+        */
+        //return res.status(200).json({ token });
+        let updated = await usersInstance.update({
+            name: nameUpdated,
+            lastName: lastNameUpdated,
+            password: passwordUpdated,
+            email: emailUpdated,
+            country: countryUpdated,
+            state: stateUpdated,
+            birthday: birthdayUpdated,
+            privilege: privilegeUpdated,
+            volunteer: volunteerUpdated,
+            course: courseUpdated
+        });
+
+        res.status(200).json(updated)
+    }
+    catch (error) {
+        return res.status(500).json(error.parent?.constraint);
+    }
+
+})
 
 module.exports = router;
 
