@@ -37,6 +37,10 @@ module.exports = (sequelize) => {
       type: DataTypes.ENUM("Member", "Premium Member", "Admin"),
       allowNull: false,
     },
+    keyword: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     volunteer: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
@@ -44,7 +48,7 @@ module.exports = (sequelize) => {
     course: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-    },
+    }
   });
 };
 

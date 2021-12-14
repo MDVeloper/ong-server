@@ -136,10 +136,9 @@ router.delete('/delete', async (req, res, next) => {
 
 // Relacionar articulo (curso) a un usuario
 router.post('/asign', async (req, res, next) => {
-    
     try {
         const { userId, courseId } = req.body;
-    
+
         let userInstance = await Users.findByPk(userId);
         let articleInstance = await Articles.findByPk(courseId);
 
