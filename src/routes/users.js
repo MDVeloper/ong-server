@@ -40,11 +40,11 @@ function verifyMatch(req, res, next) {
 // Registro de usuarios
 router.post("/register", async (req, res, next) => {
     try {
-        const { name, lastName, password, email, country, state, birthday, privilege, volunteer, course } = req.body;
+        const { name, lastName, password, email, country, state, birthday, privilege, volunteer, course, keyword } = req.body;
 
         hash = await bcrypt.hash(password, 10);
 
-        console.log(req.body)
+        // console.log(req.body)
 
         let usersInstance = await Users.create({
             name: name,
@@ -55,6 +55,7 @@ router.post("/register", async (req, res, next) => {
             state: state,
             birthday: birthday,
             privilege: privilege,
+            keyword: keyword,
             volunteer: volunteer,
             course: course,
         });
@@ -67,7 +68,7 @@ router.post("/register", async (req, res, next) => {
 
         const { id } = tokenid
         const token = jwt.sign({ "id": id }, 'TODO_ENV');
-        console.log(token);
+        // console.log(token);
         return res.status(200).json({ token });
         // return res.status(200).json(usersInstance);
     }
@@ -138,15 +139,15 @@ passport.use(new googleStrategy({
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: process.env.GOOGLE_CALLBACK_URL,
     passReqToCallback: true
- }, async (request, accessToken, refreshToken, profile, done) => {
-    console.log("PROFILE!");
-    console.log(profile);
+}, async (request, accessToken, refreshToken, profile, done) => {
+    // console.log("PROFILE!");
+    // console.log(profile);
     return done(null, profile);
 }))
 
 // Definimos el login de passport modificando los campos usernameField por "email" y passwordField a "password" por si acaso.
 passport.use(new localStrategy({ usernameField: "email", passwordField: "password" }, async (email, password, done) => {
-    console.log("localStrategy");
+    // console.log("localStrategy");
     try {
         // Buscamos al usuario por email
         const userInstance = await Users.findOne({
@@ -198,7 +199,7 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser(async (user, done) => {
     console.log("deserializing...");
     console.log(user);
-    
+
     if (user.provider) return done(null, user);
 
     try {
@@ -237,7 +238,7 @@ const isLoggedIn = (req, res, next) => {
 }
 
 // Ruta para login
-router.post('/login', passport.authenticate('local', { failureRedirect: '/loginFail' }), async (req, res, next) => {
+router.post('/login', async (req, res, next) => {
     const { email } = req.body;
 
     try {
@@ -266,7 +267,7 @@ router.post('/login', passport.authenticate('local', { failureRedirect: '/loginF
 });
 
 // In this route you can see that if the user is logged in u can acess his info in: req.user
-router.get('/good', isLoggedIn, (req, res) =>{
+router.get('/good', isLoggedIn, (req, res) => {
     //res.render("pages/profile",{name:req.user.displayName,pic:req.user.photos[0].value,email:req.user.emails[0].value})
     res.send("Excelente");
 })
@@ -275,27 +276,24 @@ router.get('/good', isLoggedIn, (req, res) =>{
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/failed' }),
-  function(req, res) {
-    // Successful authentication, redirect home.
-    //res.redirect('users/good');
-    //res.redirect('../users/good');
-    res.redirect('http://localhost:3001/users/good');
-  }
+    function (req, res) {
+        // Successful authentication, redirect home.
+        //res.redirect('users/good');
+        //res.redirect('../users/good');
+        res.redirect('http://localhost:3001/users/good');
+    }
 );
 
 // Modificacion de usuarios
 router.put("/:id", async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { name, lastName, password, email, country, state, birthday, privilege, volunteer, course } = req.body;
-
-        hash = password ? await bcrypt.hash(password, 10) : undefined;
+        const { name, lastName, email, country, state, birthday, privilege, volunteer, course } = req.body;
 
         let usersInstance = await Users.findByPk(id);
 
         let nameUpdated = name ? name : usersInstance.name
         let lastNameUpdated = lastName ? lastName : usersInstance.lastName
-        let passwordUpdated = password ? hash : usersInstance.password
         let emailUpdated = email ? email : usersInstance.email
         let countryUpdated = country ? country : usersInstance.country
         let stateUpdated = state ? state : usersInstance.state
@@ -312,10 +310,10 @@ router.put("/:id", async (req, res, next) => {
         })
         */
         //return res.status(200).json({ token });
+
         let updated = await usersInstance.update({
             name: nameUpdated,
             lastName: lastNameUpdated,
-            password: passwordUpdated,
             email: emailUpdated,
             country: countryUpdated,
             state: stateUpdated,
@@ -331,6 +329,41 @@ router.put("/:id", async (req, res, next) => {
         return res.status(500).json(error.parent?.constraint);
     }
 
+})
+
+router.post("/newpassword", async (req, res, next) => {
+    try {
+        const { email, password, keyword } = req.body
+
+        let userinstance = await Users.findOne({
+            where: {
+                email: email,
+            }
+        })
+
+        if (userinstance) {
+            if (userinstance.dataValues.keyword == keyword) {
+                hash = password ? await bcrypt.hash(password, 10) : undefined;
+
+                let passwordUpdated = password ? hash : userinstance.dataValues.password
+
+                let update = await userinstance.update({
+                    password: passwordUpdated
+                })
+                console.log("TOY ABAJO", update)
+                res.status(200).send("Contraseña cambiada")
+            }
+
+            if (userinstance.dataValues.keyword !== keyword) {
+                res.status(200).send("La palabra clave no coincide")
+            }
+        }
+        else {
+            res.status(200).send("El email ingresado no coincide")
+        }
+    } catch (error) {
+        return res.status(500).json(error)
+    }
 })
 
 module.exports = router;
