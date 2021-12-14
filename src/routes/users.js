@@ -312,6 +312,7 @@ router.put("/:id", async (req, res, next) => {
         })
         */
         //return res.status(200).json({ token });
+
         let updated = await usersInstance.update({
             name: nameUpdated,
             lastName: lastNameUpdated,
