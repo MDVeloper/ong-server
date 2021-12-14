@@ -9,6 +9,8 @@ const router = Router();
 router.post('/creacion', async (req, res, next) => {
 
     try {
+        console.log("Back",req.body)
+
         const { title, img, description, category, status } = req.body;
 
         let articleInstance = await Articles.create({
