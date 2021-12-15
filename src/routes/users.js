@@ -280,7 +280,7 @@ router.get('/google/callback', passport.authenticate('google', { failureRedirect
         // Successful authentication, redirect home.
         //res.redirect('users/good');
         //res.redirect('../users/good');
-        res.redirect('http://localhost:3001/users/good');
+        res.redirect('/users/good');
     }
 );
 
