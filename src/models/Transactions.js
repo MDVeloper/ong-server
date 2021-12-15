@@ -23,6 +23,10 @@ module.exports = (sequelize) => {
     email: {
       type: DataTypes.STRING,
       allowNull: false
+    },
+    target: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     }
   });
 };
