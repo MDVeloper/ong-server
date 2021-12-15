@@ -7,26 +7,49 @@ const router = Router();
 
 // Registro de articulos
 router.post('/creacion', async (req, res, next) => {
+    const { title, img, description, category, status } = req.body;
 
-    try {
-        console.log("Back",req.body)
 
-        const { title, img, description, category, status } = req.body;
-
-        let articleInstance = await Articles.create({
-            title: title,
-            img: img,
-            description: description,
-            category: category,
-            voteCount: 0,
-            status: status
-        });
-
-        res.status(200).json(articleInstance);
+    if(category !== "Projects") {
+        try {
+            console.log("Backkkkkkkkkkkkkkkkkkkkkkkkk",req.body)
+    
+    
+            let aux = category !== "Projects" ? "" : status
+    
+            let articleInstance = await Articles.create({
+                title: title,
+                img: img,
+                description: description,
+                category: category,
+                voteCount: 0
+            });
+    
+            res.status(200).json(articleInstance);
+        }
+        catch (error) {
+            next(error);
+        }
+    }else {
+        try {
+    
+            let articleInstance = await Articles.create({
+                title: title,
+                img: img,
+                description: description,
+                category: category,
+                voteCount: 0,
+                status: status
+            });
+    
+            res.status(200).json(articleInstance);
+        }
+        catch (error) {
+            next(error);
+        }
     }
-    catch (error) {
-        next(error);
-    }
+   
+
 })
 
 // Solicitud de articulos
@@ -102,6 +125,7 @@ router.put('/:id', async (req, res, next) => {
         let descriptionUpdated = description ? description : article.description;
         let categoryUpdated = category ? category : article.category;
 
+
         let updated = await article.update({
             title: titleUpdated,
             img: imgUpdated,
@@ -118,6 +142,37 @@ router.put('/:id', async (req, res, next) => {
 
     //res.send("soy articles");
 })
+
+
+
+
+// Modificaion de la cantidad de votos que tiene proyecto
+router.put('/vote/:id', async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const data = req.body;
+
+        let article = await Articles.findByPk(id);
+        
+        let aux =  data.vote2 === true ? Number(article.voteCount) + 1 : Number(article.voteCount)  - 1;
+        
+        let updated = await article.update({
+            voteCount : aux
+        });
+        res.status(200).json(updated)
+
+    } catch (error) {
+        next(error)
+    }
+})
+
+
+
+
+
+
+
+
 
 // Borrado de articulos
 router.delete('/delete', async (req, res, next) => {
