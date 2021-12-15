@@ -113,34 +113,68 @@ router.get("/:id", (req, res, next) => {
 
 // Modificacion de articulos
 router.put('/:id', async (req, res, next) => {
-    try {
+    const { title, img, description, category, status } = req.body;
+    const { id } = req.params;
+    
+    if( category === "Projects") {
+        try {
 
-        const { id } = req.params;
-        const { title, img, description, category } = req.body;
-
-        let article = await Articles.findByPk(id);
-
-        let titleUpdated = title ? title : article.title;
-        let imgUpdated = img ? img : article.img;
-        let descriptionUpdated = description ? description : article.description;
-        let categoryUpdated = category ? category : article.category;
-
-
-        let updated = await article.update({
-            title: titleUpdated,
-            img: imgUpdated,
-            description: descriptionUpdated,
-            category: categoryUpdated
-        });
-
-        res.status(200).json(updated)
-
-    } catch (error) {
-        next(error)
+    
+            console.log("Soy el id para editaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", id)
+    
+            let article = await Articles.findByPk(id);
+    
+            let titleUpdated = title ? title : article.title;
+            let imgUpdated = img ? img : article.img;
+            let descriptionUpdated = description ? description : article.description;
+            let categoryUpdated = category ? category : article.category;
+            let statusUpdated = status ? status : article.status
+    
+    
+            let updated = await article.update({
+                title: titleUpdated,
+                img: imgUpdated,
+                description: descriptionUpdated,
+                category: categoryUpdated,
+                status: statusUpdated
+            });
+    
+            res.status(200).json(updated)
+    
+        } catch (error) {
+            next(error)
+        }
     }
+    else {
+        try {
+            console.log("Soy el id para editaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", id)
+    
+            let article = await Articles.findByPk(id);
+    
+            let titleUpdated = title ? title : article.title;
+            let imgUpdated = img ? img : article.img;
+            let descriptionUpdated = description ? description : article.description;
+            let categoryUpdated = category ? category : article.category;
+    
+    
+            let updated = await article.update({
+                title: titleUpdated,
+                img: imgUpdated,
+                description: descriptionUpdated,
+                category: categoryUpdated
+            });
+    
+            res.status(200).json(updated)
+    
+        } catch (error) {
+            next(error)
+        }
+    }
+   
 
 
-    //res.send("soy articles");
+    
+
 })
 
 
