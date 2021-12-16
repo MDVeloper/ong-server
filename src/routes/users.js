@@ -239,31 +239,33 @@ const isLoggedIn = (req, res, next) => {
 
 // Ruta para login
 router.post('/login', async (req, res, next) => {
-    const { email } = req.body;
+    const { email, password } = req.body;
 
     try {
         let foundUser = await Users.findOne({
             where: {
-                email: email
+                email: email,
             }
         });
 
         if (foundUser) {
-            const { id, privilege } = foundUser
-            const token = jwt.sign({ "id": id, "privilege": privilege }, 'TODO_ENV');
-            console.log(token);
-            return res.json({ token }); // { "token": "eyJhbGciOiJ...........etc etc" }
+            const verify = await bcrypt.compare(password, foundUser.dataValues.password)
+            if (verify) {
+                const { id, privilege } = foundUser
+                const token = jwt.sign({ "id": id, "privilege": privilege }, 'TODO_ENV');
+                return res.status(200).json({ token }); // { "token": "eyJhbGciOiJ...........etc etc" }
+            }
+            else {
+                res.status(200).send("Contraseña no valida")
+            }
         }
         else {
-            const token = undefined;
-            console.log(token);
-            return res.json({ token }) // undefined {}
+            return res.status(200).send("Usuario no encontrado")
         }
     } catch (error) {
         next(error)
     }
 
-    res.redirect('/loginOK');
 });
 
 // In this route you can see that if the user is logged in u can acess his info in: req.user
