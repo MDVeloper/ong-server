@@ -7,24 +7,49 @@ const router = Router();
 
 // Registro de articulos
 router.post('/creacion', async (req, res, next) => {
+    const { title, img, description, category, status } = req.body;
 
-    try {
-        const { title, img, description, category, status } = req.body;
 
-        let articleInstance = await Articles.create({
-            title: title,
-            img: img,
-            description: description,
-            category: category,
-            voteCount: 0,
-            status: status
-        });
-
-        res.status(200).json(articleInstance);
+    if(category !== "Projects") {
+        try {
+            console.log("Backkkkkkkkkkkkkkkkkkkkkkkkk",req.body)
+    
+    
+            let aux = category !== "Projects" ? "" : status
+    
+            let articleInstance = await Articles.create({
+                title: title,
+                img: img,
+                description: description,
+                category: category,
+                voteCount: 0
+            });
+    
+            res.status(200).json(articleInstance);
+        }
+        catch (error) {
+            next(error);
+        }
+    }else {
+        try {
+    
+            let articleInstance = await Articles.create({
+                title: title,
+                img: img,
+                description: description,
+                category: category,
+                voteCount: 0,
+                status: status
+            });
+    
+            res.status(200).json(articleInstance);
+        }
+        catch (error) {
+            next(error);
+        }
     }
-    catch (error) {
-        next(error);
-    }
+   
+
 })
 
 // Solicitud de articulos
@@ -88,34 +113,100 @@ router.get("/:id", (req, res, next) => {
 
 // Modificacion de articulos
 router.put('/:id', async (req, res, next) => {
-    try {
+    const { title, img, description, category, status } = req.body;
+    const { id } = req.params;
+    
+    if( category === "Projects") {
+        try {
 
+    
+            console.log("Soy el id para editaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", id)
+    
+            let article = await Articles.findByPk(id);
+    
+            let titleUpdated = title ? title : article.title;
+            let imgUpdated = img ? img : article.img;
+            let descriptionUpdated = description ? description : article.description;
+            let categoryUpdated = category ? category : article.category;
+            let statusUpdated = status ? status : article.status
+    
+    
+            let updated = await article.update({
+                title: titleUpdated,
+                img: imgUpdated,
+                description: descriptionUpdated,
+                category: categoryUpdated,
+                status: statusUpdated
+            });
+    
+            res.status(200).json(updated)
+    
+        } catch (error) {
+            next(error)
+        }
+    }
+    else {
+        try {
+            console.log("Soy el id para editaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", id)
+    
+            let article = await Articles.findByPk(id);
+    
+            let titleUpdated = title ? title : article.title;
+            let imgUpdated = img ? img : article.img;
+            let descriptionUpdated = description ? description : article.description;
+            let categoryUpdated = category ? category : article.category;
+    
+    
+            let updated = await article.update({
+                title: titleUpdated,
+                img: imgUpdated,
+                description: descriptionUpdated,
+                category: categoryUpdated
+            });
+    
+            res.status(200).json(updated)
+    
+        } catch (error) {
+            next(error)
+        }
+    }
+   
+
+
+    
+
+})
+
+
+
+
+// Modificaion de la cantidad de votos que tiene proyecto
+router.put('/vote/:id', async (req, res, next) => {
+    try {
         const { id } = req.params;
-        const { title, img, description, category } = req.body;
+        const data = req.body;
 
         let article = await Articles.findByPk(id);
-
-        let titleUpdated = title ? title : article.title;
-        let imgUpdated = img ? img : article.img;
-        let descriptionUpdated = description ? description : article.description;
-        let categoryUpdated = category ? category : article.category;
-
+        
+        let aux =  data.vote2 === true ? Number(article.voteCount) + 1 : Number(article.voteCount)  - 1;
+        
         let updated = await article.update({
-            title: titleUpdated,
-            img: imgUpdated,
-            description: descriptionUpdated,
-            category: categoryUpdated
+            voteCount : aux
         });
-
         res.status(200).json(updated)
 
     } catch (error) {
         next(error)
     }
-
-
-    //res.send("soy articles");
 })
+
+
+
+
+
+
+
+
 
 // Borrado de articulos
 router.delete('/delete', async (req, res, next) => {
