@@ -12,8 +12,6 @@ router.post('/creacion', async (req, res, next) => {
 
     if(category !== "Projects") {
         try {
-            console.log("Backkkkkkkkkkkkkkkkkkkkkkkkk",req.body)
-    
     
             let aux = category !== "Projects" ? "" : status
     
@@ -118,9 +116,6 @@ router.put('/:id', async (req, res, next) => {
     
     if( category === "Projects") {
         try {
-
-    
-            console.log("Soy el id para editaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", id)
     
             let article = await Articles.findByPk(id);
     
@@ -147,8 +142,6 @@ router.put('/:id', async (req, res, next) => {
     }
     else {
         try {
-            console.log("Soy el id para editaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", id)
-    
             let article = await Articles.findByPk(id);
     
             let titleUpdated = title ? title : article.title;
